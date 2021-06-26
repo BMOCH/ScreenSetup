@@ -176,7 +176,6 @@ void MainWindow::OnLButtonDown(int pixelX, int pixelY, DWORD flags)
         else
         {
             InsertScreen(x, y);
-            wchar_t buf[128];
         }
     }
     InvalidateRect(m_hwnd, NULL, FALSE);
@@ -334,12 +333,11 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), (DWORD)wParam);
         break;
     case WM_SETCURSOR:
-        /* TODO : Cursor settings
         if (LOWORD(lParam) == HTCLIENT)
         {
             SetCursor(hCursor);
             return TRUE;
-        }*/
+        }
         break;
     case WM_KEYDOWN:
         OnKeyDown((UINT)wParam);

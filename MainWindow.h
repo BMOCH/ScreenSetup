@@ -84,6 +84,23 @@ class MainWindow : public BaseWindow<MainWindow>
     void    SetMode(Mode m)
     {
         mode = m;
+
+        LPWSTR cursor;
+        switch (mode)
+        {
+        case Mode::Select:
+            cursor = IDC_ARROW;
+            break;
+        case Mode::Move:
+            cursor = IDC_SIZEALL;
+            break;
+        default:
+            cursor = IDC_ARROW;
+            break;
+        }
+
+        hCursor = LoadCursor(NULL, cursor);
+        SetCursor(hCursor);
     }
 
 public:
