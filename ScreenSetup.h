@@ -3,7 +3,6 @@
 #include "resource.h"
 #include "HelperFunctions.h"
 #include "windowsx.h"
-#include "DimensionsWindow.h"
 
 // maximum percentage of the window width the canvas will take up
 const float MAX_CANVAS_WIDTH_PERCENT = 0.75;

@@ -15,22 +15,21 @@ class MainWindow : public BaseWindow<MainWindow>
         Move    // moving a screen
     };
 
-    DimensionsWindow dw; // set canvas dimensions window REMOVE
     int canvasHeight;    // pixel height of the canvas the monitors will be placed on
     int canvasWidth;     // pixel width of the canvas the monitors will be placed on
 
-    HWND canvasWidth_hwnd;
-    HWND canvasHeight_hwnd;
+    HWND canvasWidth_hwnd;  // handle to canvas width text box window
+    HWND canvasHeight_hwnd; // handle to canvas height text box window
 
-    HCURSOR                 hCursor; // cursor
-    ID2D1Factory*           pFactory; // drawing factory
+    HCURSOR                 hCursor;        // cursor
+    ID2D1Factory*           pFactory;       // drawing factory
     ID2D1HwndRenderTarget*  pRenderTarget;  // render target
     ID2D1SolidColorBrush*   pBrush;         // drawing brush
     D2D1_POINT_2F           ptMouse;        // point offset of mouse click from screen top left corner
     IDWriteFactory*         pDWriteFactory; // direct write factory
     IDWriteTextFormat*      pTextFormat;    // text format for drawing text
 
-    Mode                    mode;          // current mode
+    Mode                    mode;           // current mode
 
     list<shared_ptr<ScreenInfo>>             screens;   // list of screens
     list<shared_ptr<ScreenInfo>>::iterator   selection; // iterator for screens

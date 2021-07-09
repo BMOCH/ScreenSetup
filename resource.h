@@ -12,10 +12,7 @@
 #define IDI_SMALL                       108
 #define IDC_SCREENSETUP                 109
 #define IDR_MAINFRAME                   128
-#define ID_FILE_SETCANVASDIMENSIONS     32771
-#define IDM_DIMENSIONS                  32772
 #define ID_ACCELERATOR32773             32773
-#define ID_DIMENSIONS                   32774
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

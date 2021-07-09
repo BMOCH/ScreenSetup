@@ -15,6 +15,7 @@
 
 #include <windowsx.h>
 #include <list>
+#include <string>
 #include <memory>
 #include <d2d1.h>
 #include <dwrite.h>

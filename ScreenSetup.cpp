@@ -7,6 +7,11 @@
 #include "ScreenSetup.h"
 
 /*******************************************************************************
+ * Function Declarations :
+ ******************************************************************************/
+INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+
+/*******************************************************************************
 * Global Variables :
 *******************************************************************************/
 float canvasWidthDP  = -1.f; // display pixel height of the canvas the monitors will be placed on
@@ -359,10 +364,17 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         SetMode(Mode::Select);
 
-        dw.Create(L"Set Canvas Dimensions",
-            WS_CHILD | WS_CAPTION | WS_SYSMENU | WS_EX_TOPMOST | WS_CLIPCHILDREN,
-            0,
-            200, 20, dw.WindowWidth, dw.WindowHeight, m_hwnd);
+        wchar_t buf[10];
+        swprintf(buf, 10, L"%d", canvasWidth);
+        canvasWidth_hwnd = CreateWindowEx(NULL, L"EDIT", buf,
+            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST,
+            10, 10, 200, 20,
+            m_hwnd, NULL, NULL, NULL);
+        swprintf(buf, 10, L"%d", canvasHeight);
+        canvasHeight_hwnd = CreateWindowEx(NULL, L"EDIT", buf,
+            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST,
+            10, 40, 200, 20,
+            m_hwnd, NULL, NULL, NULL);
         break;
     case WM_COMMAND:
         {
@@ -371,9 +383,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             switch (wmId)
             {
             case IDM_ABOUT:
-                break;
-            case IDM_DIMENSIONS:
-                ShowWindow(dw.Window(), SW_SHOW);
+                DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_ABOUTBOX), m_hwnd, About);
                 break;
             case IDM_EXIT:
                 DiscardGraphicsResources();
@@ -419,4 +429,24 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
     }
     return 0;
+}
+
+// Message handler for about box.
+INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    UNREFERENCED_PARAMETER(lParam);
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        return (INT_PTR)TRUE;
+
+    case WM_COMMAND:
+        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+        {
+            EndDialog(hDlg, LOWORD(wParam));
+            return (INT_PTR)TRUE;
+        }
+        break;
+    }
+    return (INT_PTR)FALSE;
 }

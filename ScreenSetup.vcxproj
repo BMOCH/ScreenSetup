@@ -139,7 +139,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="DimensionsWindow.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="HelperFunctions.h" />
@@ -150,7 +149,6 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DimensionsWindow.cpp" />
     <ClCompile Include="ScreenInfo.cpp" />
     <ClCompile Include="ScreenSetup.cpp" />
     <ClCompile Include="ScreenFunctions.cpp" />
