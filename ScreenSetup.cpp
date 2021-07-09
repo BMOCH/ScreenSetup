@@ -363,15 +363,6 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             WS_CHILD | WS_CAPTION | WS_SYSMENU | WS_EX_TOPMOST | WS_CLIPCHILDREN,
             0,
             200, 20, dw.WindowWidth, dw.WindowHeight, m_hwnd);
-
-        canvaswidth_hwnd = CreateWindowEx(NULL, L"EDIT", L"xxxx",
-            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST,
-            10, 10, 200, 20,
-            m_hwnd, NULL, NULL, NULL);
-        canvasheight_hwnd = CreateWindowEx(NULL, L"EDIT", L"xxxx",
-            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST,
-            10, 10, 200, 20,
-            m_hwnd, NULL, NULL, NULL);
         break;
     case WM_COMMAND:
         {
