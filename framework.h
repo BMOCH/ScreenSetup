@@ -1,4 +1,4 @@
-// header.h : include file for standard system include files,
+// framework.h : include file for standard system include files,
 // or project specific include files
 //
 
@@ -13,6 +13,9 @@
 #include <malloc.h>
 #include <tchar.h>
 
+#include <windowsx.h>
 #include <list>
 #include <memory>
 #include <d2d1.h>
+#include <dwrite.h>
+#pragma comment(lib, "Dwrite")

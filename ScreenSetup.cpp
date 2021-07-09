@@ -9,14 +9,13 @@
 /*******************************************************************************
 * Global Variables :
 *******************************************************************************/
-float canvasWidthDP; // display pixel height of the canvas the monitors will be placed on
-float canvasHeightDP;// display pixel width of the canvas the monitors will be placed on
+float canvasWidthDP  = -1.f; // display pixel height of the canvas the monitors will be placed on
+float canvasHeightDP = -1.f; // display pixel width of the canvas the monitors will be placed on
 
 /*******************************************************************************
 * 
 *******************************************************************************/
 
-// create graphics resources
 HRESULT MainWindow::CreateGraphicsResources()
 {
     HRESULT hr = S_OK;
@@ -38,14 +37,46 @@ HRESULT MainWindow::CreateGraphicsResources()
             hr = pRenderTarget->CreateSolidColorBrush(color, &pBrush);
         }
     }
+
+    // text code based on https://docs.microsoft.com/en-us/windows/win32/Direct2D/how-to--draw-text
+    if (pTextFormat == NULL)
+    {
+        // Create a DirectWrite factory.
+        hr = DWriteCreateFactory(
+            DWRITE_FACTORY_TYPE_SHARED,
+            __uuidof(pDWriteFactory),
+            reinterpret_cast<IUnknown**>(&pDWriteFactory)
+        );
+        if (SUCCEEDED(hr))
+        {
+            // Create a DirectWrite text format object.
+            hr = pDWriteFactory->CreateTextFormat(
+                msc_fontName,
+                NULL,
+                DWRITE_FONT_WEIGHT_NORMAL,
+                DWRITE_FONT_STYLE_NORMAL,
+                DWRITE_FONT_STRETCH_NORMAL,
+                msc_fontSize,
+                L"", //locale
+                &pTextFormat
+            );
+        }
+        if (SUCCEEDED(hr))
+        {
+            // Center the text horizontally and vertically.
+            pTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
+            pTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR);
+        }
+    }
     return hr;
 }
 
-// discard graphics resources
 void MainWindow::DiscardGraphicsResources()
 {
     SafeRelease(&pRenderTarget);
     SafeRelease(&pBrush);
+    SafeRelease(&pTextFormat);
+    SafeRelease(&pDWriteFactory);
 }
 
 void MainWindow::DrawScreen(ID2D1RenderTarget* pRT, ID2D1SolidColorBrush* pBrush, ScreenInfo screen, boolean sel)
@@ -78,15 +109,34 @@ void MainWindow::DrawScreen(ID2D1RenderTarget* pRT, ID2D1SolidColorBrush* pBrush
     pRT->DrawRectangle(rect, pBrush, 1.0f); // draw border
 }
 
+int MainWindow::GetSidePanelText(wchar_t* buf, int len)
+{
+    int n;
+    if (Selection())
+    {
+        n  = swprintf(buf    , len    , L"Selected Screen:\n");
+        n += swprintf(buf + n, len - n, L"x: %f\ny: %f\n", Selection()->x, Selection()->y);
+        n += swprintf(buf + n, len - n, L"width: %d\nheight: %d\n", Selection()->width, Selection()->height);
+        n += swprintf(buf + n, len - n, L"rotation:%f\n", Selection()->angle);
+    }
+    else
+    {
+        n = swprintf(buf, len, L"Selected Screen:\nx:\ny:\nwidth:\nheight:\nrotation:\n");
+    }
+    
+    return n;
+}
 
-// draw all screens onto canvas
 void MainWindow::OnPaint()
 {
     HRESULT hr = CreateGraphicsResources();
     if (SUCCEEDED(hr))
     {
-        // make sure canvas DP dimensions are correct by calling Resize
-        Resize();
+        // make sure canvas DP dimensions are set
+        if (canvasWidthDP < 0 || canvasHeightDP < 0)
+        {
+            Resize();
+        }
 
         PAINTSTRUCT ps;
         BeginPaint(m_hwnd, &ps);
@@ -94,9 +144,9 @@ void MainWindow::OnPaint()
 
         // draw the canvas
         pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
-        D2D1_RECT_F panel = D2D1::RectF(0, 0, canvasWidthDP, canvasHeightDP);
+        D2D1_RECT_F canvas = D2D1::RectF(0, 0, canvasWidthDP, canvasHeightDP);
         pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::SkyBlue));
-        pRenderTarget->FillRectangle(&panel, pBrush);
+        pRenderTarget->FillRectangle(&canvas, pBrush);
 
         // draw screens
         for (auto i = screens.begin(); i != screens.end(); ++i)
@@ -108,6 +158,28 @@ void MainWindow::OnPaint()
         {
             DrawScreen(pRenderTarget, pBrush, *Selection(), true);
         }
+
+        // draw side panel
+        
+        // calculate side panel dimensions
+        RECT rc;
+        GetClientRect(m_hwnd, &rc);
+
+        D2D1_RECT_F sidePanel = D2D1::RectF(
+            rc.right * (MAX_CANVAS_WIDTH_PERCENT + sidePadding),
+            rc.bottom * sidePadding,
+            rc.right * (1 - sidePadding),
+            rc.bottom * (1 - sidePadding)
+        );
+
+        // get text to draw
+        const int max_len = 2048;
+        wchar_t text[max_len];
+        int len = GetSidePanelText(text, max_len);
+
+        // draw the text
+        pBrush->SetColor(fontColor);
+        pRenderTarget->DrawText(text, len, pTextFormat, sidePanel, pBrush);
 
         hr = pRenderTarget->EndDraw();
         if (FAILED(hr) || hr == D2DERR_RECREATE_TARGET)
@@ -168,10 +240,6 @@ void MainWindow::OnLButtonDown(int pixelX, int pixelY, DWORD flags)
             ptMouse = D2D1::Point2F(Selection()->x, Selection()->y);
             ptMouse.x -= x;
             ptMouse.y -= y;
-
-            //wchar_t buf[1048];
-            //swprintf(buf, 128, L"Sx,Sy:%f,%f\nx,y:%f,%f", Selection()->x, Selection()->y, x, y);
-            //MessageBox(m_hwnd, buf, L"Error", MB_OK);
         }
         else
         {
@@ -186,7 +254,6 @@ void MainWindow::OnLButtonUp()
     SetMode(Mode::Select);
     ReleaseCapture();
 }
-
 
 void MainWindow::OnMouseMove(int pixelX, int pixelY, DWORD flags)
 {
@@ -205,7 +272,6 @@ void MainWindow::OnMouseMove(int pixelX, int pixelY, DWORD flags)
         InvalidateRect(m_hwnd, NULL, FALSE);
     }
 }
-
 
 void MainWindow::OnKeyDown(UINT vkey)
 {
@@ -254,16 +320,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     MainWindow win;
 
     // Perform application initialization:
-    if (!win.Create(L"Set Screen Setup", WS_OVERLAPPEDWINDOW))
+    if (!win.Create(L"Set Screen Setup", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN))
     {
         return FALSE;
     }
-
-    // TODO : display sidebar information
-    //HWND hwndX = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("X-Coordinate"), TEXT("0"),
-    //    WS_CHILD | WS_VISIBLE, 100, 20, 140,
-    //    20, win.Window(), NULL, NULL, NULL);
-    //ShowWindow(hwndX, nCmdShow);
 
     UpdateWindow(win.Window());
 
@@ -298,6 +358,20 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             return -1;  // Fail CreateWindowEx.
         }
         SetMode(Mode::Select);
+
+        dw.Create(L"Set Canvas Dimensions",
+            WS_CHILD | WS_CAPTION | WS_SYSMENU | WS_EX_TOPMOST | WS_CLIPCHILDREN,
+            0,
+            200, 20, dw.WindowWidth, dw.WindowHeight, m_hwnd);
+
+        canvaswidth_hwnd = CreateWindowEx(NULL, L"EDIT", L"xxxx",
+            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST,
+            10, 10, 200, 20,
+            m_hwnd, NULL, NULL, NULL);
+        canvasheight_hwnd = CreateWindowEx(NULL, L"EDIT", L"xxxx",
+            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST,
+            10, 10, 200, 20,
+            m_hwnd, NULL, NULL, NULL);
         break;
     case WM_COMMAND:
         {
@@ -308,9 +382,12 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             case IDM_ABOUT:
                 break;
             case IDM_DIMENSIONS:
-                // TODO : PANEL Dimensions
+                ShowWindow(dw.Window(), SW_SHOW);
                 break;
             case IDM_EXIT:
+                DiscardGraphicsResources();
+                SafeRelease(&pFactory);
+                PostQuitMessage(0);
                 break;
             default:
                 return DefWindowProc(m_hwnd, uMsg, wParam, lParam);

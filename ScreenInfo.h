@@ -22,8 +22,8 @@ struct ScreenInfo
 	FLOAT x;      // x coord on wall
 	FLOAT y;      // y coord on wall
 	FLOAT angle;  // screen angle (around (x,y) clockwise)
-	FLOAT height; // screen height
-	FLOAT width;  // screen width
+	INT   height; // screen height
+	INT   width;  // screen width
 
 	// used when working with the screens on the panel
 	BOOL HitTest(float testX, float testY);

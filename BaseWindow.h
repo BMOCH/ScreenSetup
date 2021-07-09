@@ -55,6 +55,7 @@ public:
         wc.lpfnWndProc = DERIVED_TYPE::WindowProc;
         wc.hInstance = GetModuleHandle(NULL);
         wc.lpszClassName = ClassName();
+        wc.lpszMenuName = MAKEINTRESOURCE(MenuName());
 
         RegisterClass(&wc);
 
@@ -71,6 +72,7 @@ public:
 protected:
 
     virtual PCWSTR  ClassName() const = 0;
+    virtual INT     MenuName() const = 0;
     virtual LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
 
     HWND m_hwnd;
