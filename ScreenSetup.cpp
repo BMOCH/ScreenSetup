@@ -1,15 +1,18 @@
 /*
 * Defines the entry point for the application.
 */
-
-#include "framework.h"
 #include "MainWindow.h"
 #include "ScreenSetup.h"
 
 /*******************************************************************************
  * Function Declarations :
  ******************************************************************************/
+
+// Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+
+// Checks if wstring contains only numeric wchars.
+BOOL isANum(wchar_t* ws);
 
 /*******************************************************************************
 * Global Variables :
@@ -147,7 +150,7 @@ void MainWindow::OnPaint()
         BeginPaint(m_hwnd, &ps);
         pRenderTarget->BeginDraw();
 
-        // draw the canvas
+        // canvas
         pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
         D2D1_RECT_F canvas = D2D1::RectF(0, 0, canvasWidthDP, canvasHeightDP);
         pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::SkyBlue));
@@ -164,17 +167,17 @@ void MainWindow::OnPaint()
             DrawScreen(pRenderTarget, pBrush, *Selection(), true);
         }
 
-        // draw side panel
+        // side panel
         
         // calculate side panel dimensions
         RECT rc;
         GetClientRect(m_hwnd, &rc);
 
         D2D1_RECT_F sidePanel = D2D1::RectF(
-            rc.right * (MAX_CANVAS_WIDTH_PERCENT + sidePadding),
-            rc.bottom * sidePadding,
-            rc.right * (1 - sidePadding),
-            rc.bottom * (1 - sidePadding)
+            rc.right * (MAX_CANVAS_WIDTH_PERCENT + SIDE_PADDING),
+            rc.bottom * SIDE_PADDING,
+            rc.right * (1 - SIDE_PADDING),
+            rc.bottom * (1 - SIDE_PADDING)
         );
 
         // get text to draw
@@ -218,6 +221,16 @@ void MainWindow::Resize()
             canvasHeightDP = rtSize.height;
             canvasWidthDP = canvasHeightDP * (canvasWidth / static_cast<float>(canvasHeight));
         }
+
+        // move side panel boxes
+        int boxWidth = min(200, 201);
+        int fontSizeInt = static_cast<int>(msc_fontSize);
+
+        MoveWindow(canvasWidth_hwnd , static_cast<int>(rtSize.width) - 210, static_cast<int>(SIDE_PADDING * rtSize.height) + 1 * fontSizeInt, 200, fontSizeInt, false);
+        MoveWindow(canvasHeight_hwnd, static_cast<int>(rtSize.width) - 210, static_cast<int>(SIDE_PADDING * rtSize.height) + 2 * fontSizeInt, 200, fontSizeInt, false);
+
+        InvalidateRect(canvasWidth_hwnd , NULL, FALSE);
+        InvalidateRect(canvasHeight_hwnd, NULL, FALSE);
 
         InvalidateRect(m_hwnd, NULL, FALSE);
     }
@@ -368,13 +381,23 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         swprintf(buf, 10, L"%d", canvasWidth);
         canvasWidth_hwnd = CreateWindowEx(NULL, L"EDIT", buf,
             WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST,
-            10, 10, 200, 20,
-            m_hwnd, NULL, NULL, NULL);
+            10, 10, 200, static_cast<int>(msc_fontSize),
+            m_hwnd, (HMENU) 8000, NULL, NULL);
         swprintf(buf, 10, L"%d", canvasHeight);
         canvasHeight_hwnd = CreateWindowEx(NULL, L"EDIT", buf,
             WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST,
-            10, 40, 200, 20,
-            m_hwnd, NULL, NULL, NULL);
+            10, 40, 200, static_cast<int>(msc_fontSize),
+            m_hwnd, (HMENU) 8001, NULL, NULL);
+        break;
+    case WM_INITDIALOG:
+        {
+        LOGFONT logfont;
+            ZeroMemory(&logfont, sizeof(LOGFONT));
+            logfont.lfCharSet = DEFAULT_CHARSET;
+            logfont.lfHeight = -20;
+            HFONT hFont = CreateFontIndirect(&logfont);
+            SendMessage(m_hwnd, WM_SETFONT, (WPARAM)hFont, TRUE);
+        }
         break;
     case WM_COMMAND:
         {
@@ -386,9 +409,21 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_ABOUTBOX), m_hwnd, About);
                 break;
             case IDM_EXIT:
-                DiscardGraphicsResources();
-                SafeRelease(&pFactory);
-                PostQuitMessage(0);
+                SendMessage(m_hwnd, WM_DESTROY, TRUE, TRUE);
+                break;
+            case 8000:
+                if (HIWORD(wParam) == EN_CHANGE)
+                {
+                    wchar_t buf[20];
+                    GetWindowText(canvasWidth_hwnd, buf, 10);
+
+                    // update canvas width
+                    if (wcslen(buf) != 0 && isANum(buf))
+                    {
+                        canvasWidth = _wtoi(buf);
+                        Resize();
+                    }
+                }
                 break;
             default:
                 return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
@@ -431,7 +466,6 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-// Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
@@ -449,4 +483,16 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return (INT_PTR)FALSE;
+}
+
+BOOL isANum(wchar_t* ws)
+{
+    for (size_t i = 0; i < wcslen(ws); ++i)
+    {
+        if (ws[i] < '0' || ws[i] > '9')
+        {
+            return false;
+        }
+    }
+    return true;
 }

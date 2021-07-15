@@ -141,7 +141,6 @@
   <ItemGroup>
     <ClInclude Include="framework.h" />
     <ClInclude Include="BaseWindow.h" />
-    <ClInclude Include="HelperFunctions.h" />
     <ClInclude Include="MainWindow.h" />
     <ClInclude Include="ScreenInfo.h" />
     <ClInclude Include="Resource.h" />

@@ -3,11 +3,8 @@
  */
 
 #pragma once
-
 #include "framework.h"
-
 #pragma comment(lib, "d2d1")
-
 #define _USE_MATH_DEFINES
 #include <math.h> // pi, trig functions
 

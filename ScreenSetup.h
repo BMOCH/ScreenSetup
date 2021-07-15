@@ -1,7 +1,8 @@
+/*
+ * Settings.
+*/
 #pragma once
-
 #include "resource.h"
-#include "HelperFunctions.h"
 #include "windowsx.h"
 
 // maximum percentage of the window width the canvas will take up
@@ -21,5 +22,15 @@ const WCHAR msc_fontName[] = L"Verdana";
 const FLOAT msc_fontSize = 30;
 
 // side panel padding
-const FLOAT sidePadding = 0.025f;
+const FLOAT SIDE_PADDING = 0.025f;
 const D2D1_COLOR_F fontColor = D2D1::ColorF(D2D1::ColorF::Black);
+
+// class to safely release pointers
+template <class T> void SafeRelease(T** ppT)
+{
+    if (*ppT)
+    {
+        (*ppT)->Release();
+        *ppT = NULL;
+    }
+}

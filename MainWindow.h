@@ -115,7 +115,7 @@ public:
     MainWindow() : hCursor(NULL), pFactory(NULL), pRenderTarget(NULL), pBrush(NULL),
         ptMouse(D2D1::Point2F()), mode(Mode::Select), selection(screens.end()),
         canvasHeight(DEFAULT_CANVAS_HEIGHT), canvasWidth(DEFAULT_CANVAS_WIDTH),
-        pDWriteFactory(NULL), pTextFormat(NULL)
+        pDWriteFactory(NULL), pTextFormat(NULL), canvasHeight_hwnd(NULL), canvasWidth_hwnd(NULL)
     {
     }
 
