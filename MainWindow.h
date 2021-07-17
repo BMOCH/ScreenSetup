@@ -17,9 +17,16 @@ class MainWindow : public BaseWindow<MainWindow>
 
     int canvasHeight;    // pixel height of the canvas the monitors will be placed on
     int canvasWidth;     // pixel width of the canvas the monitors will be placed on
+    float canvasWidthDP; // display pixel height of the canvas the monitors will be placed on
+    float canvasHeightDP; // display pixel width of the canvas the monitors will be placed on
 
     HWND canvasWidth_hwnd;  // handle to canvas width text box window
     HWND canvasHeight_hwnd; // handle to canvas height text box window
+    HWND screenX_hwnd;
+    HWND screenY_hwnd;
+    HWND screenWidth_hwnd;
+    HWND screenHeight_hwnd;
+    HWND screenRot_hwnd;
 
     HCURSOR                 hCursor;        // cursor
     ID2D1Factory*           pFactory;       // drawing factory
@@ -67,6 +74,9 @@ class MainWindow : public BaseWindow<MainWindow>
     // offsets the selection screen by (x,y)
     void     MoveSelection(float x, float y);
 
+    // sets the selection screen's angle to theta
+    void     SetAngle(int theta);
+
     /********************************************************************************
     * Input Functions (defined in ScreenSetup.cpp)
     ********************************************************************************/
@@ -84,6 +94,9 @@ class MainWindow : public BaseWindow<MainWindow>
 
     // returns the text printed in the side panel
     int      GetSidePanelText(wchar_t* buf, int len);
+
+    // updates the side panel
+    void     UpdateSidePanel();
 
     /********************************************************************************
     * Application State Functions
@@ -115,7 +128,10 @@ public:
     MainWindow() : hCursor(NULL), pFactory(NULL), pRenderTarget(NULL), pBrush(NULL),
         ptMouse(D2D1::Point2F()), mode(Mode::Select), selection(screens.end()),
         canvasHeight(DEFAULT_CANVAS_HEIGHT), canvasWidth(DEFAULT_CANVAS_WIDTH),
-        pDWriteFactory(NULL), pTextFormat(NULL), canvasHeight_hwnd(NULL), canvasWidth_hwnd(NULL)
+        canvasHeightDP(-1.f), canvasWidthDP(-1.f), pDWriteFactory(NULL), pTextFormat(NULL),
+        canvasHeight_hwnd(NULL), canvasWidth_hwnd(NULL), screenX_hwnd(NULL),
+        screenY_hwnd(NULL), screenWidth_hwnd(NULL), screenHeight_hwnd(NULL),
+        screenRot_hwnd(NULL)
     {
     }
 

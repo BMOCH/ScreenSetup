@@ -15,6 +15,7 @@
 
 #include <windowsx.h>
 #include <list>
+#include <vector>
 #include <string>
 #include <memory>
 #include <d2d1.h>

@@ -53,3 +53,8 @@ void MainWindow::MoveSelection(float x, float y)
 {
     SetLocation(Selection()->x + x, Selection()->y + y);
 }
+
+void MainWindow::SetAngle(int theta)
+{
+    Selection()->angle = theta % 360;
+}

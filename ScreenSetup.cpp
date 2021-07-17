@@ -17,8 +17,7 @@ BOOL isANum(wchar_t* ws);
 /*******************************************************************************
 * Global Variables :
 *******************************************************************************/
-float canvasWidthDP  = -1.f; // display pixel height of the canvas the monitors will be placed on
-float canvasHeightDP = -1.f; // display pixel width of the canvas the monitors will be placed on
+
 
 /*******************************************************************************
 * 
@@ -120,19 +119,43 @@ void MainWindow::DrawScreen(ID2D1RenderTarget* pRT, ID2D1SolidColorBrush* pBrush
 int MainWindow::GetSidePanelText(wchar_t* buf, int len)
 {
     int n;
+    n  = swprintf(buf    , len    , L"Canvas Dimensions:\n");
+    n += swprintf(buf + n, len - n, L"width:\nheight:\n");
+    n += swprintf(buf + n, len - n, L"Selected Screen:\nx:\ny:\nwidth:\nheight:\nrotation:\n");
+    
+    return n;
+}
+
+void MainWindow::UpdateSidePanel()
+{
     if (Selection())
     {
-        n  = swprintf(buf    , len    , L"Selected Screen:\n");
-        n += swprintf(buf + n, len - n, L"x: %f\ny: %f\n", Selection()->x, Selection()->y);
-        n += swprintf(buf + n, len - n, L"width: %d\nheight: %d\n", Selection()->width, Selection()->height);
-        n += swprintf(buf + n, len - n, L"rotation:%f\n", Selection()->angle);
+        EnableWindow(screenWidth_hwnd, true);
+        EnableWindow(screenHeight_hwnd, true);
+        EnableWindow(screenX_hwnd, true);
+        EnableWindow(screenY_hwnd, true);
+        EnableWindow(screenRot_hwnd, true);
+
+        SetWindowText(screenWidth_hwnd, to_wstring(Selection()->width).c_str());
+        SetWindowText(screenHeight_hwnd, to_wstring(Selection()->height).c_str());
+        SetWindowText(screenX_hwnd, to_wstring(static_cast<int>(roundf(Selection()->x))).c_str());
+        SetWindowText(screenY_hwnd, to_wstring(static_cast<int>(roundf(Selection()->y))).c_str());
+        SetWindowText(screenRot_hwnd, to_wstring(static_cast<int>(roundf(Selection()->angle))).c_str());
     }
     else
     {
-        n = swprintf(buf, len, L"Selected Screen:\nx:\ny:\nwidth:\nheight:\nrotation:\n");
+        EnableWindow(screenWidth_hwnd, false);
+        EnableWindow(screenHeight_hwnd, false);
+        EnableWindow(screenX_hwnd, false);
+        EnableWindow(screenY_hwnd, false);
+        EnableWindow(screenRot_hwnd, false);
+
+        SetWindowText(screenWidth_hwnd, L"");
+        SetWindowText(screenHeight_hwnd, L"");
+        SetWindowText(screenX_hwnd, L"");
+        SetWindowText(screenY_hwnd, L"");
+        SetWindowText(screenRot_hwnd, L"");
     }
-    
-    return n;
 }
 
 void MainWindow::OnPaint()
@@ -151,9 +174,9 @@ void MainWindow::OnPaint()
         pRenderTarget->BeginDraw();
 
         // canvas
-        pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
+        pRenderTarget->Clear(backgroundColor);
         D2D1_RECT_F canvas = D2D1::RectF(0, 0, canvasWidthDP, canvasHeightDP);
-        pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::SkyBlue));
+        pBrush->SetColor(canvasColor);
         pRenderTarget->FillRectangle(&canvas, pBrush);
 
         // draw screens
@@ -167,7 +190,7 @@ void MainWindow::OnPaint()
             DrawScreen(pRenderTarget, pBrush, *Selection(), true);
         }
 
-        // side panel
+        /* side panel */
         
         // calculate side panel dimensions
         RECT rc;
@@ -223,14 +246,32 @@ void MainWindow::Resize()
         }
 
         // move side panel boxes
-        int boxWidth = min(200, 201);
-        int fontSizeInt = static_cast<int>(msc_fontSize);
+        int paddingWidth = static_cast<int>(SIDE_PADDING * rtSize.width);
+        int paddingHeight = static_cast<int>(SIDE_PADDING * rtSize.height);
+        int betweenHeight = 5;
+        int boxHeight = static_cast<int>(msc_fontSize);
+        int boxWidth = min(MAX_TEXTBOX_WIDTH, static_cast<int>((1 - MAX_CANVAS_WIDTH_PERCENT) * rtSize.width) - 2 * paddingWidth);
 
-        MoveWindow(canvasWidth_hwnd , static_cast<int>(rtSize.width) - 210, static_cast<int>(SIDE_PADDING * rtSize.height) + 1 * fontSizeInt, 200, fontSizeInt, false);
-        MoveWindow(canvasHeight_hwnd, static_cast<int>(rtSize.width) - 210, static_cast<int>(SIDE_PADDING * rtSize.height) + 2 * fontSizeInt, 200, fontSizeInt, false);
-
+        MoveWindow(canvasWidth_hwnd, static_cast<int>(rtSize.width) - paddingWidth - boxWidth, paddingHeight + 1 * (boxHeight + betweenHeight), boxWidth, 20, false);
         InvalidateRect(canvasWidth_hwnd , NULL, FALSE);
+
+        MoveWindow(canvasHeight_hwnd, static_cast<int>(rtSize.width) - paddingWidth - boxWidth, paddingHeight + 2 * (boxHeight + betweenHeight), boxWidth, 20, false);
         InvalidateRect(canvasHeight_hwnd, NULL, FALSE);
+
+        MoveWindow(screenWidth_hwnd, static_cast<int>(rtSize.width) - paddingWidth - boxWidth, paddingHeight + 4 * (boxHeight + betweenHeight), boxWidth, 20, false);
+        InvalidateRect(screenWidth_hwnd, NULL, FALSE);
+
+        MoveWindow(screenHeight_hwnd, static_cast<int>(rtSize.width) - paddingWidth - boxWidth, paddingHeight + 5 * (boxHeight + betweenHeight), boxWidth, 20, false);
+        InvalidateRect(screenHeight_hwnd, NULL, FALSE);
+
+        MoveWindow(screenX_hwnd, static_cast<int>(rtSize.width) - paddingWidth - boxWidth, paddingHeight + 6 * (boxHeight + betweenHeight), boxWidth, 20, false);
+        InvalidateRect(screenX_hwnd, NULL, FALSE);
+
+        MoveWindow(screenY_hwnd, static_cast<int>(rtSize.width) - paddingWidth - boxWidth, paddingHeight + 7 * (boxHeight + betweenHeight), boxWidth, 20, false);
+        InvalidateRect(screenY_hwnd, NULL, FALSE);
+
+        MoveWindow(screenRot_hwnd, static_cast<int>(rtSize.width) - paddingWidth - boxWidth, paddingHeight + 8 * (boxHeight + betweenHeight), boxWidth, 20, false);
+        InvalidateRect(screenRot_hwnd, NULL, FALSE);
 
         InvalidateRect(m_hwnd, NULL, FALSE);
     }
@@ -238,6 +279,7 @@ void MainWindow::Resize()
 
 void MainWindow::OnLButtonDown(int pixelX, int pixelY, DWORD flags)
 {
+    SetFocus(m_hwnd);
     if (pixelX <= canvasWidthDP && pixelY <= canvasHeightDP)
     {
         // get scaling factor
@@ -264,6 +306,7 @@ void MainWindow::OnLButtonDown(int pixelX, int pixelY, DWORD flags)
             InsertScreen(x, y);
         }
     }
+    UpdateSidePanel();
     InvalidateRect(m_hwnd, NULL, FALSE);
 }
 
@@ -271,6 +314,7 @@ void MainWindow::OnLButtonUp()
 {
     SetMode(Mode::Select);
     ReleaseCapture();
+    UpdateSidePanel();
 }
 
 void MainWindow::OnMouseMove(int pixelX, int pixelY, DWORD flags)
@@ -286,7 +330,17 @@ void MainWindow::OnMouseMove(int pixelX, int pixelY, DWORD flags)
     if (mode == Mode::Move && (flags & MK_LBUTTON) && Selection())
     { 
         // Move the screen.
+        int prevX = round(Selection()->x);
+        int prevY = round(Selection()->y);
         SetLocation(x + ptMouse.x, y + ptMouse.y);
+        if (prevX != round(Selection()->x))
+        {
+            SetWindowText(screenX_hwnd, to_wstring(static_cast<int>(roundf(Selection()->x))).c_str());
+        }
+        if (prevY != round(Selection()->y))
+        {
+            SetWindowText(screenY_hwnd, to_wstring(static_cast<int>(roundf(Selection()->y))).c_str());
+        }
         InvalidateRect(m_hwnd, NULL, FALSE);
     }
 }
@@ -323,6 +377,7 @@ void MainWindow::OnKeyDown(UINT vkey)
         MoveSelection(0, 1);
         break;
     }
+    UpdateSidePanel();
     InvalidateRect(m_hwnd, NULL, FALSE);
 }
 
@@ -354,7 +409,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     // Main message loop:
     while (GetMessage(&msg, nullptr, 0, 0))
     {
-        if (!TranslateAccelerator(win.Window(), hAccelTable, &msg))
+        if (!TranslateAccelerator(win.Window(), hAccelTable, &msg) && !IsDialogMessage(win.Window(), &msg))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
@@ -369,6 +424,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
     case WM_CREATE:
+        {
         if (FAILED(D2D1CreateFactory(
             D2D1_FACTORY_TYPE_SINGLE_THREADED, &pFactory)))
         {
@@ -380,21 +436,35 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         wchar_t buf[10];
         swprintf(buf, 10, L"%d", canvasWidth);
         canvasWidth_hwnd = CreateWindowEx(NULL, L"EDIT", buf,
-            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST,
-            10, 10, 200, static_cast<int>(msc_fontSize),
-            m_hwnd, (HMENU) 8000, NULL, NULL);
+            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP | WS_GROUP,
+            0, 0, 0, 0, m_hwnd, (HMENU)8000, NULL, NULL);
         swprintf(buf, 10, L"%d", canvasHeight);
         canvasHeight_hwnd = CreateWindowEx(NULL, L"EDIT", buf,
-            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST,
-            10, 40, 200, static_cast<int>(msc_fontSize),
-            m_hwnd, (HMENU) 8001, NULL, NULL);
+            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP,
+            0, 0, 0, 0, m_hwnd, (HMENU)8001, NULL, NULL);
+        screenWidth_hwnd = CreateWindowEx(NULL, L"EDIT", L"",
+            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP | WS_DISABLED,
+            0, 0, 0, 0, m_hwnd, (HMENU)8002, NULL, NULL);
+        screenHeight_hwnd = CreateWindowEx(NULL, L"EDIT", L"",
+            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP | WS_DISABLED,
+            0, 0, 0, 0, m_hwnd, (HMENU)8003, NULL, NULL);
+        screenX_hwnd = CreateWindowEx(NULL, L"EDIT", L"",
+            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP | WS_DISABLED,
+            0, 0, 0, 0, m_hwnd, (HMENU)8004, NULL, NULL);
+        screenY_hwnd = CreateWindowEx(NULL, L"EDIT", L"",
+            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP | WS_DISABLED,
+            0, 0, 0, 0, m_hwnd, (HMENU)8005, NULL, NULL);
+        screenRot_hwnd = CreateWindowEx(NULL, L"EDIT", L"",
+            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP | WS_DISABLED,
+            0, 0, 0, 0, m_hwnd, (HMENU)8006, NULL, NULL);
+        }
         break;
     case WM_INITDIALOG:
         {
         LOGFONT logfont;
             ZeroMemory(&logfont, sizeof(LOGFONT));
             logfont.lfCharSet = DEFAULT_CHARSET;
-            logfont.lfHeight = -20;
+            logfont.lfHeight = static_cast<LONG>(msc_fontSize);
             HFONT hFont = CreateFontIndirect(&logfont);
             SendMessage(m_hwnd, WM_SETFONT, (WPARAM)hFont, TRUE);
         }
@@ -411,16 +481,86 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             case IDM_EXIT:
                 SendMessage(m_hwnd, WM_DESTROY, TRUE, TRUE);
                 break;
-            case 8000:
+            case 8000: // canvas width
                 if (HIWORD(wParam) == EN_CHANGE)
                 {
-                    wchar_t buf[20];
-                    GetWindowText(canvasWidth_hwnd, buf, 10);
-
-                    // update canvas width
-                    if (wcslen(buf) != 0 && isANum(buf))
+                    vector<wchar_t> buf(GetWindowTextLength(canvasWidth_hwnd) + 1);
+                    GetWindowText(canvasWidth_hwnd, &buf[0], 10);
+                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
                     {
-                        canvasWidth = _wtoi(buf);
+                        canvasWidth = _wtoi(&buf[0]);
+                        Resize();
+                    }
+                }
+                break;
+            case 8001: // canvas height
+                if (HIWORD(wParam) == EN_CHANGE)
+                {
+                    vector<wchar_t> buf(GetWindowTextLength(canvasHeight_hwnd) + 1);
+                    GetWindowText(canvasHeight_hwnd, &buf[0], 10);
+                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                    {
+                        canvasHeight = _wtoi(&buf[0]);
+                        Resize();
+                    }
+                }
+                break;
+            case 8002: // screen width
+                if (HIWORD(wParam) == EN_CHANGE)
+                {
+                    vector<wchar_t> buf(GetWindowTextLength(screenWidth_hwnd) + 1);
+                    GetWindowText(screenWidth_hwnd, &buf[0], 10);
+                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                    {
+                        Selection()->width = _wtoi(&buf[0]);
+                        Resize();
+                    }
+                }
+                break;
+            case 8003: // screen height
+                if (HIWORD(wParam) == EN_CHANGE)
+                {
+                    vector<wchar_t> buf(GetWindowTextLength(screenHeight_hwnd) + 1);
+                    GetWindowText(screenHeight_hwnd, &buf[0], 10);
+                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                    {
+                        Selection()->height = _wtoi(&buf[0]);
+                        Resize();
+                    }
+                }
+                break;
+            case 8004: // screen x
+                if (HIWORD(wParam) == EN_CHANGE)
+                {
+                    vector<wchar_t> buf(GetWindowTextLength(screenX_hwnd) + 1);
+                    GetWindowText(screenX_hwnd, &buf[0], 10);
+                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                    {
+                        SetLocation(_wtof(&buf[0]), Selection()->y);
+                        Resize();
+                    }
+                }
+                break;
+            case 8005: // screen y
+                if (HIWORD(wParam) == EN_CHANGE)
+                {
+                    vector<wchar_t> buf(GetWindowTextLength(screenY_hwnd) + 1);
+                    GetWindowText(screenY_hwnd, &buf[0], 10);
+                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                    {
+                        SetLocation(Selection()->x, _wtof(&buf[0]));
+                        Resize();
+                    }
+                }
+                break;
+            case 8006: // screen rotation
+                if (HIWORD(wParam) == EN_CHANGE)
+                {
+                    vector<wchar_t> buf(GetWindowTextLength(screenRot_hwnd) + 1);
+                    GetWindowText(screenRot_hwnd, &buf[0], 10);
+                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                    {
+                        SetAngle(_wtof(&buf[0]));
                         Resize();
                     }
                 }
@@ -454,6 +594,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
     case WM_KEYDOWN:
         OnKeyDown((UINT)wParam);
+        break;
+    case WM_GETDLGCODE:
+        return DLGC_WANTARROWS | DLGC_WANTMESSAGE;
         break;
     case WM_DESTROY:
         DiscardGraphicsResources();
