@@ -121,7 +121,7 @@ int MainWindow::GetSidePanelText(wchar_t* buf, int len)
     int n;
     n  = swprintf(buf    , len    , L"Canvas Dimensions:\n");
     n += swprintf(buf + n, len - n, L"width:\nheight:\n");
-    n += swprintf(buf + n, len - n, L"Selected Screen:\nx:\ny:\nwidth:\nheight:\nrotation:\n");
+    n += swprintf(buf + n, len - n, L"Selected Screen:\nwidth:\nheight:\nx:\ny:\nrotation:\n");
     
     return n;
 }
