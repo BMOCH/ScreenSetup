@@ -43,8 +43,28 @@ BOOL MainWindow::HitTest(float x, float y)
 
 void MainWindow::SetLocation(float x, float y)
 {
-    float boundedX = max(0, min(x, canvasWidth - Selection()->width));
-    float boundedY = max(0, min(y, canvasHeight - Selection()->height));
+    D2D1_RECT_F bounds = Selection()->GetBoundRect(x, y);
+    wchar_t buf[100];
+    //swprintf(buf, 100, L"L:%f\tR:%f\tT:%f\tB:%f\n", bounds.left, bounds.right, bounds.top, bounds.bottom);
+    //OutputDebugString(buf);
+    float boundedX = x;
+    float boundedY = y;
+    if (bounds.left < 0)
+    {
+        boundedX -= bounds.left;
+    }
+    else if (bounds.right > canvasWidth)
+    {
+        boundedX -= (bounds.right - canvasWidth);
+    }
+    if (bounds.top < 0)
+    {
+        boundedY -= bounds.top;
+    }
+    else if (bounds.bottom > canvasHeight)
+    {
+        boundedY -= (bounds.bottom - canvasHeight);
+    }
     Selection()->x = boundedX;
     Selection()->y = boundedY;
 }

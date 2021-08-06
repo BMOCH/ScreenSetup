@@ -84,9 +84,9 @@ class MainWindow : public BaseWindow<MainWindow>
     void     DiscardGraphicsResources();
     void     OnPaint();
     void     Resize();
-    void     OnLButtonDown(int pixelX, int pixelY, DWORD flags);
+    void     OnLButtonDown(int dpX, int dpY, DWORD flags);
     void     OnLButtonUp();
-    void     OnMouseMove(int pixelX, int pixelY, DWORD flags);
+    void     OnMouseMove(int dpX, int dpY, DWORD flags);
     void     OnKeyDown(UINT vkey);
 
     // draws inputted screen to canvas/wall

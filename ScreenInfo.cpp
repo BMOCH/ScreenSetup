@@ -6,31 +6,60 @@ BOOL isBetween(float a, float b, float c);
 BOOL ScreenInfo::HitTest(float testX, float testY)
 {
 	// rotate input point around (x,y)
-	const float s = sinf(angle * static_cast<float>(M_PI) / 180);
-	const float c = cosf(angle * static_cast<float>(M_PI) / 180);
+	const float sin = sinf(angle * static_cast<float>(M_PI) / -180);
+	const float cos = cosf(angle * static_cast<float>(M_PI) / -180);
 	const float dx = testX - x;
 	const float dy = testY - y;
-	const float rotatedX = dx * c - dy * s;
-	const float rotatedY = dx * s + dy * c;
+	const float rotX = dx * cos - dy * sin;
+	const float rotY = dx * sin + dy * cos;
 
-	// check if the point is bounded by the rectangle
-	//return isBetween(rotatedX, x, x + width) && isBetween(rotatedY, y, y + height);
-	return isBetween(testX, x, x + width) && isBetween(testY, y, y + height);
+	// check if the point is within the bounds of the rectangle
+	return isBetween(rotX, 0, width) && isBetween(rotY, 0, height);
 }
 
-D2D1_RECT_F ScreenInfo::GetBoundRect()
+D2D1_RECT_F ScreenInfo::GetBoundRect(float testX, float testY)
 {
-	// rotate bottom right corner around (x,y)
-	const float s = sinf(angle * static_cast<float>(M_PI) / 180.0f);
-	const float c = cosf(angle * static_cast<float>(M_PI) / 180.0f);
-	const float dx = width - x;
-	const float dy = height - y;
-	const float cx = dx * c - dy * s;
-	const float cy = dx * s + dy * c;
-	// construct rectangle using top left and bottom right points
-	return D2D1::RectF(min(x,cx),min(y,cy),max(x,cx),max(y,cy));
+    // code adapted from https://stackoverflow.com/a/624082
+    const float sin = sinf(angle * static_cast<float>(M_PI) / 180);
+    const float cos = cosf(angle * static_cast<float>(M_PI) / 180);
+
+    const float hct = height * cos;
+    const float wct = width * cos;
+    const float hst = height * sin;
+    const float wst = width * sin;
+
+    float x_min, x_max, y_min, y_max;
+    if (angle < 90)
+    {
+        y_min = testY;
+        y_max = testY + hct + wst;
+        x_min = testX - hst;
+        x_max = testX + wct;
+    }
+    else if (angle < 180)
+    {
+        y_min = testY + hct;
+        y_max = testY + wst;
+        x_min = testX - hst + wct;
+        x_max = testX;
+    }
+    else if (angle < 270)
+    {
+        y_min = testY + wst + hct;
+        y_max = testY;
+        x_min = testX + wct;
+        x_max = testX;
+    }
+    else
+    {
+        y_min = testY + wst;
+        y_max = testY + hct;
+        x_min = testX;
+        x_max = testX + wct - hst;
+    }
+    return D2D1::RectF(x_min, y_min, x_max, y_max);
 }
 
 BOOL isBetween(float a, float b, float c) {
-	return (b <= a && a <= c) || (c <= a && a <= c);
+	return (b <= a && a <= c) || (c <= a && a <= b);
 }

@@ -101,7 +101,7 @@ void MainWindow::DrawScreen(ID2D1RenderTarget* pRT, ID2D1SolidColorBrush* pBrush
     );
 
     // set rotation
-    pRT->SetTransform(D2D1::Matrix3x2F::Rotation(screen.angle, D2D1::Point2F(screen.x, screen.y)));
+    pRT->SetTransform(D2D1::Matrix3x2F::Rotation(screen.angle, D2D1::Point2F(scaleX * screen.x, scaleY * screen.y)));
 
     pBrush->SetColor(fillColor);
     pRT->FillRectangle(rect, pBrush); // draw rectangle
@@ -175,6 +175,7 @@ void MainWindow::OnPaint()
 
         // canvas
         pRenderTarget->Clear(backgroundColor);
+        pRenderTarget->SetTransform(D2D1::Matrix3x2F::Rotation(0));
         D2D1_RECT_F canvas = D2D1::RectF(0, 0, canvasWidthDP, canvasHeightDP);
         pBrush->SetColor(canvasColor);
         pRenderTarget->FillRectangle(&canvas, pBrush);
@@ -189,6 +190,7 @@ void MainWindow::OnPaint()
         {
             DrawScreen(pRenderTarget, pBrush, *Selection(), true);
         }
+        pRenderTarget->SetTransform(D2D1::Matrix3x2F::Rotation(0));
 
         /* side panel */
         
@@ -277,18 +279,18 @@ void MainWindow::Resize()
     }
 }
 
-void MainWindow::OnLButtonDown(int pixelX, int pixelY, DWORD flags)
+void MainWindow::OnLButtonDown(int dpX, int dpY, DWORD flags)
 {
     SetFocus(m_hwnd);
-    if (pixelX <= canvasWidthDP && pixelY <= canvasHeightDP)
+    if (dpX <= canvasWidthDP && dpY <= canvasHeightDP)
     {
         // get scaling factor
         FLOAT scaleX = static_cast<float>(canvasWidth) / canvasWidthDP;
         FLOAT scaleY = static_cast<float>(canvasHeight) / canvasHeightDP;
 
         // get coords in terms of canvas pixel
-        FLOAT x = scaleX * pixelX;
-        FLOAT y = scaleY * pixelY;
+        FLOAT x = scaleX * dpX;
+        FLOAT y = scaleY * dpY;
 
         ClearSelection();
 
@@ -317,15 +319,15 @@ void MainWindow::OnLButtonUp()
     UpdateSidePanel();
 }
 
-void MainWindow::OnMouseMove(int pixelX, int pixelY, DWORD flags)
+void MainWindow::OnMouseMove(int dpX, int dpY, DWORD flags)
 {
     // get scaling factor
     FLOAT scaleX = static_cast<float>(canvasWidth) / canvasWidthDP;
     FLOAT scaleY = static_cast<float>(canvasHeight) / canvasHeightDP;
 
     // get coords in terms of canvas pixel
-    FLOAT x = scaleX * pixelX;
-    FLOAT y = scaleY * pixelY;
+    FLOAT x = scaleX * dpX;
+    FLOAT y = scaleY * dpY;
 
     if (mode == Mode::Move && (flags & MK_LBUTTON) && Selection())
     { 
@@ -482,15 +484,38 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 SendMessage(m_hwnd, WM_DESTROY, TRUE, TRUE);
                 break;
             case 8000: // canvas width
-                if (HIWORD(wParam) == EN_CHANGE)
+                if (HIWORD(wParam) == EN_UPDATE)
                 {
-                    vector<wchar_t> buf(GetWindowTextLength(canvasWidth_hwnd) + 1);
-                    GetWindowText(canvasWidth_hwnd, &buf[0], 10);
-                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                    // https://stackoverflow.com/questions/21850684/avoiding-recursion-when-responding-to-en-update-message
+                    static bool ok_to_process = true;
+
+                    if (ok_to_process)
                     {
-                        canvasWidth = _wtoi(&buf[0]);
-                        Resize();
+                        ok_to_process = false;
+                        vector<wchar_t> buf(GetWindowTextLength(canvasWidth_hwnd) + 1);
+                        GetWindowText(canvasWidth_hwnd, &buf[0], 10);
+                        if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                        {
+                            canvasWidth = _wtoi(&buf[0]);
+                            Resize();
+                        }
+                        else
+                        {
+                            int n = 0;
+                            for (size_t i = 0; i < wcslen(&buf[0]); ++i)
+                            {
+                                if (buf[i] >= '0' && buf[i] <= '9')
+                                {
+                                    buf[n] = buf[i];
+                                    n++;
+                                }
+                            }
+                            buf[n] = '\0';
+                            SetWindowText(canvasWidth_hwnd, &buf[0]);
+                        }
+                        ok_to_process = true;
                     }
+                    
                 }
                 break;
             case 8001: // canvas height

@@ -23,6 +23,6 @@ struct ScreenInfo
 	INT   width;  // screen width
 
 	// used when working with the screens on the panel
-	BOOL HitTest(float testX, float testY);
-	D2D1_RECT_F GetBoundRect();
+	BOOL        HitTest(float testX, float testY);
+	D2D1_RECT_F GetBoundRect(float testX, float testY);
 };
