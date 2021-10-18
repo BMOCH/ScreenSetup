@@ -11,12 +11,13 @@
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-// Checks if wstring contains only numeric wchars.
-BOOL isANum(wchar_t* ws);
+// creates a custom textbox used for the sidebar
+HWND CreateCustomTextbox(HINSTANCE hInstance, LPCWSTR text, HWND hParent, DWORD dwStyle, UINT id);
 
 /*******************************************************************************
 * Global Variables :
 *******************************************************************************/
+static WNDPROC OriginalEditCtrlProc = NULL;
 
 
 /*******************************************************************************
@@ -332,8 +333,8 @@ void MainWindow::OnMouseMove(int dpX, int dpY, DWORD flags)
     if (mode == Mode::Move && (flags & MK_LBUTTON) && Selection())
     { 
         // Move the screen.
-        int prevX = round(Selection()->x);
-        int prevY = round(Selection()->y);
+        int prevX = static_cast<int>(round(Selection()->x));
+        int prevY = static_cast<int>(round(Selection()->y));
         SetLocation(x + ptMouse.x, y + ptMouse.y);
         if (prevX != round(Selection()->x))
         {
@@ -362,21 +363,33 @@ void MainWindow::OnKeyDown(UINT vkey)
         {
             screens.erase(selection);
             ClearSelection();
-        };
+        }
         break;
     case VK_LEFT:
-        MoveSelection(-1, 0);
+        if (Selection())
+        {
+            MoveSelection(-1, 0);
+        }
         break;
     case VK_RIGHT:
-        MoveSelection(1, 0);
+        if (Selection())
+        {
+            MoveSelection(1, 0);
+        }
         break;
 
     case VK_UP:
-        MoveSelection(0, -1);
+        if (Selection())
+        {
+            MoveSelection(0, -1);
+        }
         break;
 
     case VK_DOWN:
-        MoveSelection(0, 1);
+        if (Selection())
+        {
+            MoveSelection(0, 1);
+        }
         break;
     }
     UpdateSidePanel();
@@ -437,28 +450,14 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         wchar_t buf[10];
         swprintf(buf, 10, L"%d", canvasWidth);
-        canvasWidth_hwnd = CreateWindowEx(NULL, L"EDIT", buf,
-            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP | WS_GROUP,
-            0, 0, 0, 0, m_hwnd, (HMENU)8000, NULL, NULL);
+        canvasWidth_hwnd = CreateCustomTextbox(GetModuleHandle(NULL), buf, m_hwnd, WS_GROUP, ID_CANVAS_WIDTH);
         swprintf(buf, 10, L"%d", canvasHeight);
-        canvasHeight_hwnd = CreateWindowEx(NULL, L"EDIT", buf,
-            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP,
-            0, 0, 0, 0, m_hwnd, (HMENU)8001, NULL, NULL);
-        screenWidth_hwnd = CreateWindowEx(NULL, L"EDIT", L"",
-            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP | WS_DISABLED,
-            0, 0, 0, 0, m_hwnd, (HMENU)8002, NULL, NULL);
-        screenHeight_hwnd = CreateWindowEx(NULL, L"EDIT", L"",
-            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP | WS_DISABLED,
-            0, 0, 0, 0, m_hwnd, (HMENU)8003, NULL, NULL);
-        screenX_hwnd = CreateWindowEx(NULL, L"EDIT", L"",
-            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP | WS_DISABLED,
-            0, 0, 0, 0, m_hwnd, (HMENU)8004, NULL, NULL);
-        screenY_hwnd = CreateWindowEx(NULL, L"EDIT", L"",
-            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP | WS_DISABLED,
-            0, 0, 0, 0, m_hwnd, (HMENU)8005, NULL, NULL);
-        screenRot_hwnd = CreateWindowEx(NULL, L"EDIT", L"",
-            WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP | WS_DISABLED,
-            0, 0, 0, 0, m_hwnd, (HMENU)8006, NULL, NULL);
+        canvasHeight_hwnd = CreateCustomTextbox(GetModuleHandle(NULL), buf, m_hwnd, 0, ID_CANVAS_HEIGHT);
+        screenWidth_hwnd = CreateCustomTextbox(GetModuleHandle(NULL), L"", m_hwnd, WS_DISABLED, ID_SCREEN_WIDTH);
+        screenHeight_hwnd = CreateCustomTextbox(GetModuleHandle(NULL), L"", m_hwnd, WS_DISABLED, ID_SCREEN_HEIGHT);
+        screenX_hwnd = CreateCustomTextbox(GetModuleHandle(NULL), L"", m_hwnd, WS_DISABLED, ID_SCREEN_X);
+        screenY_hwnd = CreateCustomTextbox(GetModuleHandle(NULL), L"", m_hwnd, WS_DISABLED, ID_SCREEN_Y);
+        screenRot_hwnd = CreateCustomTextbox(GetModuleHandle(NULL), L"", m_hwnd, WS_DISABLED, ID_SCREEN_ROTATION);
         }
         break;
     case WM_INITDIALOG:
@@ -483,109 +482,86 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             case IDM_EXIT:
                 SendMessage(m_hwnd, WM_DESTROY, TRUE, TRUE);
                 break;
-            case 8000: // canvas width
+            case ID_CANVAS_WIDTH: // canvas width
                 if (HIWORD(wParam) == EN_UPDATE)
                 {
-                    // https://stackoverflow.com/questions/21850684/avoiding-recursion-when-responding-to-en-update-message
-                    static bool ok_to_process = true;
-
-                    if (ok_to_process)
+                    vector<wchar_t> buf(GetWindowTextLength(canvasWidth_hwnd) + 1);
+                    GetWindowText(canvasWidth_hwnd, &buf[0], 10);
+                    if (wcslen(&buf[0]) != 0)
                     {
-                        ok_to_process = false;
-                        vector<wchar_t> buf(GetWindowTextLength(canvasWidth_hwnd) + 1);
-                        GetWindowText(canvasWidth_hwnd, &buf[0], 10);
-                        if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
-                        {
-                            canvasWidth = _wtoi(&buf[0]);
-                            Resize();
-                        }
-                        else
-                        {
-                            int n = 0;
-                            for (size_t i = 0; i < wcslen(&buf[0]); ++i)
-                            {
-                                if (buf[i] >= '0' && buf[i] <= '9')
-                                {
-                                    buf[n] = buf[i];
-                                    n++;
-                                }
-                            }
-                            buf[n] = '\0';
-                            SetWindowText(canvasWidth_hwnd, &buf[0]);
-                        }
-                        ok_to_process = true;
+                        canvasWidth = _wtoi(&buf[0]);
+                        Resize();
                     }
-                    
                 }
                 break;
-            case 8001: // canvas height
+            case ID_CANVAS_HEIGHT: // canvas height
                 if (HIWORD(wParam) == EN_CHANGE)
                 {
                     vector<wchar_t> buf(GetWindowTextLength(canvasHeight_hwnd) + 1);
                     GetWindowText(canvasHeight_hwnd, &buf[0], 10);
-                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                    if (wcslen(&buf[0]) != 0)
                     {
                         canvasHeight = _wtoi(&buf[0]);
                         Resize();
                     }
                 }
                 break;
-            case 8002: // screen width
+            case ID_SCREEN_WIDTH: // screen width
                 if (HIWORD(wParam) == EN_CHANGE)
                 {
                     vector<wchar_t> buf(GetWindowTextLength(screenWidth_hwnd) + 1);
                     GetWindowText(screenWidth_hwnd, &buf[0], 10);
-                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                    if (wcslen(&buf[0]) != 0)
                     {
                         Selection()->width = _wtoi(&buf[0]);
                         Resize();
                     }
                 }
                 break;
-            case 8003: // screen height
+            case ID_SCREEN_HEIGHT: // screen height
                 if (HIWORD(wParam) == EN_CHANGE)
                 {
                     vector<wchar_t> buf(GetWindowTextLength(screenHeight_hwnd) + 1);
                     GetWindowText(screenHeight_hwnd, &buf[0], 10);
-                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                    if (wcslen(&buf[0]) != 0)
                     {
                         Selection()->height = _wtoi(&buf[0]);
                         Resize();
                     }
                 }
                 break;
-            case 8004: // screen x
+            case ID_SCREEN_X: // screen x
                 if (HIWORD(wParam) == EN_CHANGE)
                 {
                     vector<wchar_t> buf(GetWindowTextLength(screenX_hwnd) + 1);
                     GetWindowText(screenX_hwnd, &buf[0], 10);
-                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                    if (wcslen(&buf[0]) != 0)
                     {
-                        SetLocation(_wtof(&buf[0]), Selection()->y);
+                        SetLocation(static_cast<float>(_wtof(&buf[0])), Selection()->y);
                         Resize();
                     }
                 }
                 break;
-            case 8005: // screen y
+            case ID_SCREEN_Y: // screen y
                 if (HIWORD(wParam) == EN_CHANGE)
                 {
                     vector<wchar_t> buf(GetWindowTextLength(screenY_hwnd) + 1);
                     GetWindowText(screenY_hwnd, &buf[0], 10);
-                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                    if (wcslen(&buf[0]) != 0)
                     {
-                        SetLocation(Selection()->x, _wtof(&buf[0]));
+                        SetLocation(Selection()->x, static_cast<float>(_wtof(&buf[0])));
                         Resize();
                     }
                 }
                 break;
-            case 8006: // screen rotation
+            case ID_SCREEN_ROTATION: // screen rotation
                 if (HIWORD(wParam) == EN_CHANGE)
                 {
                     vector<wchar_t> buf(GetWindowTextLength(screenRot_hwnd) + 1);
                     GetWindowText(screenRot_hwnd, &buf[0], 10);
-                    if (wcslen(&buf[0]) != 0 && isANum(&buf[0]))
+                    if (wcslen(&buf[0]) != 0)
                     {
-                        SetAngle(_wtof(&buf[0]));
+                        SetAngle(static_cast<float>(_wtof(&buf[0])));
                         Resize();
                     }
                 }
@@ -653,14 +629,55 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
-BOOL isANum(wchar_t* ws)
+// custom textbox based off https://stackoverflow.com/a/16639814
+LRESULT CALLBACK CustomTextboxProc(
+    HWND hwnd,
+    UINT uMsg,
+    WPARAM wParam,
+    LPARAM lParam)
 {
-    for (size_t i = 0; i < wcslen(ws); ++i)
+    if (uMsg == WM_CHAR)
     {
-        if (ws[i] < '0' || ws[i] > '9')
+        // Make sure we only allow specific characters
+        if (!((wParam >= '0' && wParam <= '9')
+            || !(wParam == 'a' && GetAsyncKeyState(VK_CONTROL))
+            || wParam == VK_TAB
+            || wParam == VK_RETURN
+            || wParam == VK_DELETE
+            || wParam == VK_BACK))
         {
-            return false;
+            return 0;
         }
     }
-    return true;
+
+    return CallWindowProc(OriginalEditCtrlProc, hwnd, uMsg, wParam, lParam);
+}
+
+HWND CreateCustomTextbox(HINSTANCE hInstance, LPCWSTR text, HWND hParent, DWORD dwStyle, UINT id)
+{
+    HWND hwnd;
+
+    hwnd = CreateWindowEx(
+        NULL,
+        _T("EDIT"),
+        text,
+        WS_BORDER | WS_CHILD | WS_VISIBLE | WS_EX_TOPMOST | WS_TABSTOP | dwStyle,
+        0, 0, 0, 0,
+        hParent,
+        reinterpret_cast<HMENU>(id),
+        hInstance,
+        NULL);
+    if (hwnd != NULL)
+    {
+        // Subclass the window so we can filter keystrokes
+        WNDPROC oldProc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(
+            hwnd,
+            GWLP_WNDPROC,
+            reinterpret_cast<LONG_PTR>(CustomTextboxProc)));
+        if (OriginalEditCtrlProc == NULL)
+        {
+            OriginalEditCtrlProc = oldProc;
+        }
+    }
+    return hwnd;
 }

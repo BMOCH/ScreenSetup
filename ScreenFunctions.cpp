@@ -44,9 +44,6 @@ BOOL MainWindow::HitTest(float x, float y)
 void MainWindow::SetLocation(float x, float y)
 {
     D2D1_RECT_F bounds = Selection()->GetBoundRect(x, y);
-    wchar_t buf[100];
-    //swprintf(buf, 100, L"L:%f\tR:%f\tT:%f\tB:%f\n", bounds.left, bounds.right, bounds.top, bounds.bottom);
-    //OutputDebugString(buf);
     float boundedX = x;
     float boundedY = y;
     if (bounds.left < 0)

@@ -15,6 +15,14 @@
 #define ID_ACCELERATOR32773             32773
 #define IDC_STATIC                      -1
 
+#define ID_CANVAS_WIDTH					201
+#define ID_CANVAS_HEIGHT				202
+#define ID_SCREEN_WIDTH					203
+#define ID_SCREEN_HEIGHT				204
+#define ID_SCREEN_X						205
+#define ID_SCREEN_Y						206
+#define ID_SCREEN_ROTATION				207
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
