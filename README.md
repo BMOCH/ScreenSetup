@@ -3,11 +3,11 @@ This project is used to set up multiple screens on a canvas. Screens can be plac
 
 ![Example](./images/readme_example.png)
 
-This is a work in progress and all suggestions are welcome.
-
-## 
-
 This project was created in order to create an interface for placing monitors onto a wall. The monitor locations gathered could be exported and used in a display program. This offers more flexibility than the standard N by M monitor option which is still prevalent in many programs.
+
+##
+
+This is still a work in progress and all suggestions are welcome.
 
 ## Technology
 Project is created with:
